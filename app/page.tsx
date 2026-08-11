@@ -13,9 +13,9 @@ type Project = {
 const featuredProjects: Project[] = [
   { title: "MOUSSY", category: "品牌创意视频", services: "剪辑 · 视效 · 调色 · 声音设计", clips: [1], accent: "01" },
   { title: "PIKOLIONSL", category: "产品短片", services: "剪辑 · 视效 · 调色 · 声音设计", clips: [2], accent: "02" },
+  { title: "劲霸男装 × 蜉蝣美术馆", category: "2.0 创意短片", services: "剪辑 · 视效 · 调色 · 声音设计", clips: [5], accent: "05" },
   { title: "始祖鸟 ARC'TERYX", category: "山地课堂〈夜间抱石〉", services: "剪辑 · 视效 · 调色 · 声音设计", clips: [3], accent: "03" },
   { title: "劲霸男装", category: "2024 春夏大片", services: "剪辑 · 调色", clips: [4], accent: "04" },
-  { title: "劲霸男装 × 蜉蝣美术馆", category: "2.0 创意短片", services: "剪辑 · 视效 · 调色 · 声音设计", clips: [5], accent: "05" },
   { title: "一叶子", category: "溯源 TVC", services: "剪辑 · 视效 · 调色 · 声音设计", clips: [6], accent: "06" },
   { title: "可口可乐 × 奥利奥", category: "上海活动片", services: "剪辑 · 视效 · 调色 · 声音设计", clips: [7], accent: "07" },
 ];
@@ -36,15 +36,24 @@ const aiProjects: Project[] = [
 ];
 
 const portraitClips = new Set([1, 2, 5, 8, 9, 12, 13, 14, 15]);
+const clipAspectRatios: Record<number, string> = {
+  1: "9 / 16", 2: "3 / 4", 3: "16 / 9", 4: "1280 / 614", 5: "9 / 16",
+  6: "16 / 9", 7: "16 / 9", 8: "9 / 16", 9: "9 / 16", 10: "4 / 3",
+  11: "4 / 3", 12: "3 / 4", 13: "3 / 4", 14: "3 / 4", 15: "3 / 4",
+  16: "16 / 9", 17: "16 / 9", 18: "16 / 9", 19: "4 / 3", 20: "16 / 9",
+};
 
 function ProjectCard({ project, index, compact = false, onOpen }: { project: Project; index: number; compact?: boolean; onOpen: (project: Project, clip: number) => void }) {
+  const layoutClass = project.clips.length > 1 ? "multi-project" : portraitClips.has(project.clips[0]) ? "portrait-card" : "landscape-card";
   return (
-    <article className={`project-card ${compact ? "compact" : ""}`}>
+    <article className={`project-card ${layoutClass} ${compact ? "compact" : ""}`}>
       <div className={`project-media-grid ${project.clips.length > 1 ? "multi" : "single"}`}>
         {project.clips.map((clip, clipIndex) => (
           <button
             className={`project-clip ${portraitClips.has(clip) ? "portrait" : "landscape"}`}
             key={clip}
+            type="button"
+            style={{ aspectRatio: clipAspectRatios[clip] }}
             onClick={() => onOpen(project, clip)}
             aria-label={`播放 ${project.title} 影片 ${clipIndex + 1}`}
           >
@@ -66,8 +75,10 @@ function ProjectCard({ project, index, compact = false, onOpen }: { project: Pro
 export default function Home() {
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeClip, setActiveClip] = useState<number | null>(null);
+  const [videoStatus, setVideoStatus] = useState<"loading" | "ready" | "error">("loading");
 
   const openProject = (project: Project, clip: number) => {
+    setVideoStatus("loading");
     setActiveProject(project);
     setActiveClip(clip);
   };
@@ -75,6 +86,7 @@ export default function Home() {
   const closeProject = () => {
     setActiveProject(null);
     setActiveClip(null);
+    setVideoStatus("loading");
   };
 
   useEffect(() => {
@@ -188,12 +200,27 @@ export default function Home() {
 
       {activeProject && activeClip && (
         <div className="modal" role="dialog" aria-modal="true" aria-label={`${activeProject.title} 视频播放器`} onMouseDown={(event) => event.target === event.currentTarget && closeProject()}>
-          <button className="modal-close" onClick={closeProject} aria-label="关闭视频">CLOSE ×</button>
+          <button className="modal-close" type="button" onClick={closeProject} aria-label="关闭视频">CLOSE ×</button>
           <div className={`modal-content ${portraitClips.has(activeClip) ? "portrait-modal" : ""}`}>
             <div className="modal-heading"><span>{activeProject.category}</span><h2>{activeProject.title}</h2><p>{activeProject.services}</p></div>
-            <video key={activeClip} controls autoPlay playsInline poster={`/media/posters/media${activeClip}.jpg`}>
-              <source src={`/media/videos/media${activeClip}.mp4`} type="video/mp4" />
-            </video>
+            <div className="modal-player">
+              <video
+                key={activeClip}
+                controls
+                autoPlay
+                playsInline
+                preload="metadata"
+                poster={`/media/posters/media${activeClip}.jpg`}
+                onCanPlay={() => setVideoStatus("ready")}
+                onPlay={() => setVideoStatus("ready")}
+                onWaiting={() => setVideoStatus("loading")}
+                onError={() => setVideoStatus("error")}
+              >
+                <source src={`/media/videos/media${activeClip}.mp4`} type="video/mp4" />
+              </video>
+              {videoStatus === "loading" && <span className="video-feedback" aria-live="polite">影片加载中…</span>}
+              {videoStatus === "error" && <a className="video-feedback error" href={`/media/videos/media${activeClip}.mp4`} target="_blank" rel="noreferrer">加载失败，点击单独打开影片</a>}
+            </div>
           </div>
         </div>
       )}
