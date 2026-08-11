@@ -69,6 +69,9 @@ main { overflow: hidden; }
 .featured-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 80px 22px; align-items: start; }
 .featured-grid .portrait-card { grid-column: span 4; }
 .featured-grid .landscape-card { grid-column: span 6; }
+.featured-grid .landscape-card .project-media-grid { aspect-ratio: 16 / 9; }
+.featured-grid .landscape-card .project-clip { height: 100%; aspect-ratio: auto !important; }
+.featured-grid .landscape-card .project-clip img { object-fit: cover; }
 .project-card { min-width: 0; background: transparent; padding: 0; text-align: left; }
 .project-media-grid { position: relative; display: grid; grid-template-columns: 1fr; align-items: start; overflow: hidden; background: #050505; }
 .project-media-grid.multi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
