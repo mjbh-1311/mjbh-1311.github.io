@@ -35,20 +35,31 @@ const aiProjects: Project[] = [
   { title: "PERSONAL / ZARA", category: "个人 AI 影像实验", services: "AI 视觉 · 剪辑 · 声音设计", clips: [19, 20] },
 ];
 
-function ProjectCard({ project, index, compact = false, onOpen }: { project: Project; index: number; compact?: boolean; onOpen: (project: Project) => void }) {
-  const clip = project.clips[0];
+const portraitClips = new Set([1, 2, 5, 8, 9, 12, 13, 14, 15]);
+
+function ProjectCard({ project, index, compact = false, onOpen }: { project: Project; index: number; compact?: boolean; onOpen: (project: Project, clip: number) => void }) {
   return (
-    <button className={`project-card ${compact ? "compact" : ""}`} onClick={() => onOpen(project)} aria-label={`播放 ${project.title} 作品`}>
-      <span className="media-frame">
-        <img src={`/media/posters/media${clip}.jpg`} alt={`${project.title} 作品画面`} loading="lazy" />
-        <span className="play-mark" aria-hidden="true"><span />PLAY</span>
+    <article className={`project-card ${compact ? "compact" : ""}`}>
+      <div className={`project-media-grid ${project.clips.length > 1 ? "multi" : "single"}`}>
+        {project.clips.map((clip, clipIndex) => (
+          <button
+            className={`project-clip ${portraitClips.has(clip) ? "portrait" : "landscape"}`}
+            key={clip}
+            onClick={() => onOpen(project, clip)}
+            aria-label={`播放 ${project.title} 影片 ${clipIndex + 1}`}
+          >
+            <img src={`/media/posters/media${clip}.jpg`} alt={`${project.title} 影片 ${clipIndex + 1} 画面`} loading="lazy" />
+            <span className="play-mark" aria-hidden="true"><span />PLAY</span>
+            {project.clips.length > 1 && <span className="film-label">FILM {String(clipIndex + 1).padStart(2, "0")}</span>}
+          </button>
+        ))}
         <span className="project-index">{project.accent ?? String(index + 1).padStart(2, "0")}</span>
-      </span>
-      <span className="project-copy">
-        <span><strong>{project.title}</strong><small>{project.category}</small></span>
-        <span className="project-services">{project.services}</span>
-      </span>
-    </button>
+      </div>
+      <div className="project-copy">
+        <div><strong>{project.title}</strong><small>{project.category}</small></div>
+        <div className="project-services">{project.services}</div>
+      </div>
+    </article>
   );
 }
 
@@ -56,9 +67,9 @@ export default function Home() {
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeClip, setActiveClip] = useState<number | null>(null);
 
-  const openProject = (project: Project) => {
+  const openProject = (project: Project, clip: number) => {
     setActiveProject(project);
-    setActiveClip(project.clips[0]);
+    setActiveClip(clip);
   };
 
   const closeProject = () => {
@@ -123,7 +134,7 @@ export default function Home() {
         <div className="section-heading">
           <div className="section-label">02 / SELECTED WORK</div>
           <h2>精选商业案例</h2>
-          <p>点击画面播放完整作品</p>
+          <p>每条影片均可直接点击播放</p>
         </div>
         <div className="featured-grid">
           {featuredProjects.map((project, index) => <ProjectCard key={project.title} project={project} index={index} onOpen={openProject} />)}
@@ -178,12 +189,11 @@ export default function Home() {
       {activeProject && activeClip && (
         <div className="modal" role="dialog" aria-modal="true" aria-label={`${activeProject.title} 视频播放器`} onMouseDown={(event) => event.target === event.currentTarget && closeProject()}>
           <button className="modal-close" onClick={closeProject} aria-label="关闭视频">CLOSE ×</button>
-          <div className="modal-content">
+          <div className={`modal-content ${portraitClips.has(activeClip) ? "portrait-modal" : ""}`}>
             <div className="modal-heading"><span>{activeProject.category}</span><h2>{activeProject.title}</h2><p>{activeProject.services}</p></div>
             <video key={activeClip} controls autoPlay playsInline poster={`/media/posters/media${activeClip}.jpg`}>
               <source src={`/media/videos/media${activeClip}.mp4`} type="video/mp4" />
             </video>
-            {activeProject.clips.length > 1 && <div className="clip-switcher">{activeProject.clips.map((clip, index) => <button key={clip} className={activeClip === clip ? "active" : ""} onClick={() => setActiveClip(clip)}>FILM {String(index + 1).padStart(2, "0")}</button>)}</div>}
           </div>
         </div>
       )}
